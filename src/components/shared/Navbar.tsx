@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import NextImage from "next/image";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -45,7 +46,7 @@ export function Navbar() {
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
             <Calendar className="text-white w-6 h-6" />
           </div>
-          <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+          <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70">
             Planora
           </span>
         </Link>
@@ -55,8 +56,8 @@ export function Navbar() {
           {["Events", "Organizers", "Pricing", "About"].map((item) => (
             <Link
               key={item}
-              href={`#${item.toLowerCase()}`}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors hover:translate-y-[-1px]"
+              href={`/${item.toLowerCase()}`}
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors hover:-translate-y-px"
             >
               {item}
             </Link>
@@ -85,9 +86,15 @@ export function Navbar() {
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
-              <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 overflow-hidden flex items-center justify-center">
+              <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 overflow-hidden flex items-center justify-center relative">
                 {session.user.image ? (
-                  <img src={session.user.image} alt={session.user.name} />
+                  <NextImage
+                    src={session.user.image}
+                    alt={session.user.name ?? "User avatar"}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
                 ) : (
                   <User className="w-5 h-5 text-primary" />
                 )}

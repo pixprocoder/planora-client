@@ -12,10 +12,11 @@ export default function Footer() {
           <span className="text-lg font-bold tracking-tight">Planora</span>
         </div>
 
-        <div className="flex items-center gap-8 text-sm font-medium text-muted-foreground">
-          <Link href="/" className="hover:text-primary transition-colors">Privacy</Link>
-          <Link href="/" className="hover:text-primary transition-colors">Terms</Link>
-          <Link href="/" className="hover:text-primary transition-colors">Contact</Link>
+        <div className="flex flex-wrap items-center justify-center gap-8 text-sm font-medium text-muted-foreground">
+          <Link href="/events" className="hover:text-primary transition-colors">Events</Link>
+          <Link href="/organizers" className="hover:text-primary transition-colors">Organizers</Link>
+          <Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link>
+          <Link href="/about" className="hover:text-primary transition-colors">About</Link>
         </div>
 
         <p className="text-sm text-muted-foreground">

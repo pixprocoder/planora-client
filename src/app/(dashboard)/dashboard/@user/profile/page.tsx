@@ -52,7 +52,7 @@ export default function ProfilePage() {
           { label: "Account Status", value: user.status || "Active", icon: Shield },
           { label: "Email Address", value: user.email, icon: Mail },
         ].map((item) => (
-          <div key={item.label} className="p-8 rounded-[2rem] bg-card border border-border/50 flex items-center gap-6">
+          <div key={item.label} className="p-8 rounded-4xl bg-card border border-border/50 flex items-center gap-6">
             <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center">
               <item.icon className="w-6 h-6 text-primary" />
             </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useSession, signOut } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -20,6 +19,7 @@ import { useEffect, useState } from "react";
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { data: session, isPending } = useSession();
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export function Navbar() {
             {isPending ? (
               <div className="w-24 h-8 bg-secondary animate-pulse rounded-lg" />
             ) : session ? (
-              <div className="flex items-center gap-2 md:gap-4">
+              <div className="flex items-center gap-2 md:gap-4 relative">
                 <Link
                   href="/dashboard"
                   className="hidden xs:flex items-center gap-2 text-sm font-bold bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
@@ -99,34 +99,65 @@ export function Navbar() {
                   Dashboard
                 </Link>
                 
-                <div className="hidden sm:block">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                <div className="relative">
+                  <button 
+                    onClick={() => {
+                      setIsProfileOpen(!isProfileOpen);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 overflow-hidden flex items-center justify-center relative hover:ring-2 hover:ring-primary transition-all shadow-inner group"
                   >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-                </div>
+                    {session.user.image ? (
+                      <NextImage
+                        src={session.user.image}
+                        alt={session.user.name ?? "User avatar"}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform"
+                        unoptimized
+                      />
+                    ) : (
+                      <User className="w-5 h-5 text-primary" />
+                    )}
+                  </button>
 
-                <Link 
-                  href="/dashboard/profile" 
-                  className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 overflow-hidden flex items-center justify-center relative hover:ring-2 hover:ring-primary transition-all shadow-inner"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {session.user.image ? (
-                    <NextImage
-                      src={session.user.image}
-                      alt={session.user.name ?? "User avatar"}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <User className="w-5 h-5 text-primary" />
-                  )}
-                </Link>
+                  <AnimatePresence>
+                    {isProfileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full right-0 mt-3 w-56 bg-card/90 backdrop-blur-xl border border-border p-2 rounded-2xl shadow-2xl z-50"
+                      >
+                        <div className="p-3 border-b border-border/50 mb-2">
+                          <p className="text-sm font-bold truncate">{session.user.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{session.user.email}</p>
+                        </div>
+                        <Link
+                          href="/dashboard"
+                          className="flex items-center gap-2 w-full p-3 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          Dashboard
+                        </Link>
+                        <Link
+                          href="/dashboard/profile"
+                          className="flex items-center gap-2 w-full p-3 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                        >
+                          <User className="w-4 h-4" />
+                          My Profile
+                        </Link>
+                        <div className="h-px bg-border/50 my-2" />
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 w-full p-3 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             ) : (
               <>
@@ -146,7 +177,10 @@ export function Navbar() {
             )}
             
             <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => {
+                setIsMobileMenuOpen(!isMobileMenuOpen);
+                setIsProfileOpen(false);
+              }}
               className="md:hidden p-2 hover:bg-secondary rounded-lg transition-colors text-foreground"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             >

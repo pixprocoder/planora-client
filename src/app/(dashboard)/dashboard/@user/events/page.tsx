@@ -21,8 +21,8 @@ export default function EventsPage() {
   const role = session?.user.role?.toUpperCase();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["events"],
-    queryFn: eventService.getAllEvents,
+    queryKey: ["my-events"],
+    queryFn: eventService.getMyEvents,
   });
 
   const events = data?.data || [];

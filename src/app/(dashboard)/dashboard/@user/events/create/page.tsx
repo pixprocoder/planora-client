@@ -62,10 +62,11 @@ export default function CreateEventPage() {
     mutationFn: eventService.createEvent,
     onSuccess: () => {
       toast.success("Event launched successfully!");
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["my-events"] });
       router.push("/dashboard/events");
     },
     onError: (error: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.response?.data?.message || "Failed to create event";
       toast.error(message);
     }
@@ -111,10 +112,10 @@ export default function CreateEventPage() {
             <div key={step.id} className="flex flex-col items-center gap-3">
               <div
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${isCurrent
-                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110"
-                    : isActive
-                      ? "bg-primary/20 text-primary"
-                      : "bg-secondary text-muted-foreground"
+                  ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110"
+                  : isActive
+                    ? "bg-primary/20 text-primary"
+                    : "bg-secondary text-muted-foreground"
                   }`}
               >
                 {isActive && currentStep > step.id ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-5 h-5" />}

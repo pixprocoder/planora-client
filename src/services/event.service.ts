@@ -18,6 +18,12 @@ export const eventService = {
     return data;
   },
 
+  getMyEvents: async (): Promise<IEventsResponse> => {
+    const { data } =
+      await axiosInstance.get<IEventsResponse>("/events/my-events");
+    return data;
+  },
+
   getEventById: async (id: string): Promise<IEventResponse> => {
     const { data } = await axiosInstance.get<IEventResponse>(`/events/${id}`);
     return data;

@@ -1,16 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { Mail, Lock, User, Loader2, Image as ImageIcon } from "lucide-react";
-import { FaGoogle } from "react-icons/fa";
-import { toast } from "sonner";
-import { useForm } from "@tanstack/react-form";
-import { signUp, signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -19,6 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { signIn, signUp } from "@/lib/auth-client";
+import { useForm } from "@tanstack/react-form";
+import { motion } from "framer-motion";
+import { Image as ImageIcon, Loader2, Lock, Mail, User } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FaGoogle } from "react-icons/fa";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -111,9 +111,8 @@ export default function RegisterPage() {
             }}
             className="space-y-4"
           >
-            <form.Field
-              name="name"
-              children={(field) => (
+            <form.Field name="name">
+              {(field) => (
                 <div className="space-y-2">
                   <Label htmlFor={field.name} className="text-xs">Full Name</Label>
                   <div className="relative">
@@ -131,11 +130,10 @@ export default function RegisterPage() {
                   </div>
                 </div>
               )}
-            />
+            </form.Field>
 
-            <form.Field
-              name="email"
-              children={(field) => (
+            <form.Field name="email">
+              {(field) => (
                 <div className="space-y-2">
                   <Label htmlFor={field.name} className="text-xs">Email</Label>
                   <div className="relative">
@@ -154,11 +152,10 @@ export default function RegisterPage() {
                   </div>
                 </div>
               )}
-            />
+            </form.Field>
 
-            <form.Field
-              name="image"
-              children={(field) => (
+            <form.Field name="image">
+              {(field) => (
                 <div className="space-y-2">
                   <Label htmlFor={field.name} className="text-xs">Profile Image URL (Optional)</Label>
                   <div className="relative">
@@ -175,11 +172,10 @@ export default function RegisterPage() {
                   </div>
                 </div>
               )}
-            />
+            </form.Field>
 
-            <form.Field
-              name="password"
-              children={(field) => (
+            <form.Field name="password">
+              {(field) => (
                 <div className="space-y-2">
                   <Label htmlFor={field.name} className="text-xs">Password</Label>
                   <div className="relative">
@@ -198,11 +194,10 @@ export default function RegisterPage() {
                   </div>
                 </div>
               )}
-            />
+            </form.Field>
 
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-              children={([canSubmit, isSubmitting]) => (
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit, isSubmitting]) => (
                 <Button
                   type="submit"
                   disabled={!canSubmit || isSubmitting}
@@ -215,8 +210,9 @@ export default function RegisterPage() {
                   )}
                 </Button>
               )}
-            />
+            </form.Subscribe>
           </form>
+
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2 pb-8">

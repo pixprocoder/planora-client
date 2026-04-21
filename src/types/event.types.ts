@@ -20,6 +20,11 @@ export interface IEvent {
     id: string;
     name: string;
   };
+  image?: string | null;
+  _count?: {
+    requests: number;
+    reviews: number;
+  };
   createdAt: string;
   updatedAt: string;
 }

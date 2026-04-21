@@ -40,7 +40,12 @@ export default function ProfilePage() {
       image: "",
     },
     onSubmit: async ({ value }) => {
-      mutation.mutate(value as IUpdateProfileRequest);
+      const payload = {
+        ...value,
+        phone: value.phone || undefined,
+        image: value.image || null,
+      };
+      mutation.mutate(payload as IUpdateProfileRequest);
     },
   });
 

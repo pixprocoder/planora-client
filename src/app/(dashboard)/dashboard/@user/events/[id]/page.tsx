@@ -20,12 +20,16 @@ import {
   Rocket,
   Settings,
   Ticket,
-  Type
+  Type,
+  Users as UsersIcon,
+  LayoutGrid
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatDate, formatTime } from "@/utils/date";
+import { AttendeeTable } from "@/components/dashboard/AttendeeTable";
+import { joinRequestService } from "@/services/joinRequest.service";
 
 const STEPS = [
   { id: 1, title: "Basic Info", icon: Type },
@@ -40,6 +44,7 @@ export default function ManageEventPage() {
   const eventId = params.id as string;
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
+  const [activeTab, setActiveTab] = useState<"SETTINGS" | "ATTENDEES">("SETTINGS");
 
   // 1. Fetch Categories
   const { data: categoriesData } = useQuery({
@@ -60,7 +65,15 @@ export default function ManageEventPage() {
   });
   const eventData = eventResponse?.data;
 
-  // 4. TanStack Form Implementation (with cached defaults)
+  // 4. Fetch Join Requests for this event
+  const { data: requestsResponse, isLoading: isLoadingRequests } = useQuery({
+    queryKey: ["event-requests", eventId],
+    queryFn: () => joinRequestService.getEventRequests(eventId),
+    enabled: activeTab === "ATTENDEES"
+  });
+  const requests = requestsResponse?.data || [];
+
+  // 5. TanStack Form Implementation
   const form = useForm({
     defaultValues: {
       title: eventData?.title || "",
@@ -77,7 +90,6 @@ export default function ManageEventPage() {
     },
   });
 
-  // 4. Hydrate Form on Data Load
   useEffect(() => {
     if (eventData) {
       form.reset({
@@ -102,7 +114,6 @@ export default function ManageEventPage() {
       router.push("/dashboard/events");
     },
     onError: (error: unknown) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.response?.data?.message || "Failed to update event";
       toast.error(message);
     }
@@ -149,284 +160,351 @@ export default function ManageEventPage() {
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="flex items-center justify-between mb-12 relative px-4">
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-border -z-10 translate-y-[-50%]" />
-        {STEPS.map((step) => {
-          const Icon = step.icon;
-          const isActive = currentStep >= step.id;
-          const isCurrent = currentStep === step.id;
-
-          return (
-            <div key={step.id} className="flex flex-col items-center gap-3">
-              <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${isCurrent
-                  ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110"
-                  : isActive
-                    ? "bg-primary/20 text-primary"
-                    : "bg-secondary text-muted-foreground"
-                  }`}
-              >
-                {isActive && currentStep > step.id ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
-              </div>
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-                {step.title}
-              </span>
-            </div>
-          );
-        })}
+      {/* Tabs */}
+      <div className="flex items-center gap-2 p-1 bg-secondary/30 border border-border/50 rounded-2xl mb-10 w-fit">
+        <button
+          onClick={() => setActiveTab("SETTINGS")}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeTab === "SETTINGS" 
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
+              : "text-muted-foreground hover:bg-secondary/50"
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          General Settings
+        </button>
+        <button
+          onClick={() => setActiveTab("ATTENDEES")}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeTab === "ATTENDEES" 
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
+              : "text-muted-foreground hover:bg-secondary/50"
+          }`}
+        >
+          <UsersIcon className="w-4 h-4" />
+          Attendee Matrix
+          {requests.filter(r => r.status === "PENDING").length > 0 && (
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse ml-0.5" />
+          )}
+        </button>
       </div>
 
-      {/* Form Content */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-        className="bg-card border border-border/50 rounded-4xl p-8 md:p-12 shadow-xl shadow-primary/5 min-h-[400px] relative overflow-hidden"
-      >
-        <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait">
+        {activeTab === "SETTINGS" ? (
           <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
+            key="settings"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-12"
+          >
+            {/* Progress Bar */}
+            <div className="flex items-center justify-between mb-12 relative px-4">
+              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-border -z-10 translate-y-[-50%]" />
+              {STEPS.map((step) => {
+                const Icon = step.icon;
+                const isActive = currentStep >= step.id;
+                const isCurrent = currentStep === step.id;
+
+                return (
+                  <div key={step.id} className="flex flex-col items-center gap-3">
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${isCurrent
+                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110"
+                        : isActive
+                          ? "bg-primary/20 text-primary"
+                          : "bg-secondary text-muted-foreground"
+                        }`}
+                    >
+                      {isActive && currentStep > step.id ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                      {step.title}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Form Content */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+              className="bg-card border border-border/50 rounded-4xl p-8 md:p-12 shadow-xl shadow-primary/5 min-h-[400px] relative overflow-hidden"
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
+                  {currentStep === 1 && (
+                    <div className="space-y-6">
+                      <form.Field name="title">
+                        {(field) => (
+                          <div>
+                            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Event Title</label>
+                            <input
+                              value={field.state.value}
+                              onBlur={field.handleBlur}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              placeholder="e.g. NextGen Tech Summit 2026"
+                              className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none text-lg font-bold"
+                            />
+                          </div>
+                        )}
+                      </form.Field>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <form.Field name="categoryId">
+                          {(field) => (
+                            <div>
+                              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Category</label>
+                              <select
+                                value={field.state.value || ""}
+                                onChange={(e) => field.handleChange(e.target.value || null)}
+                                className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none font-bold"
+                              >
+                                <option value="">Select Category</option>
+                                {categories.map((cat) => (
+                                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </form.Field>
+                        <form.Field name="visibility">
+                          {(field) => (
+                            <div>
+                              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Visibility</label>
+                              <div className="flex gap-2 p-1 bg-secondary/50 rounded-2xl border border-border">
+                                <button
+                                  type="button"
+                                  onClick={() => field.handleChange("PUBLIC")}
+                                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${field.state.value === "PUBLIC" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Public
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => field.handleChange("PRIVATE")}
+                                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${field.state.value === "PRIVATE" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
+                                >
+                                  <EyeOff className="w-4 h-4" />
+                                  Private
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </form.Field>
+                      </div>
+
+                      <form.Field name="description">
+                        {(field) => (
+                          <div>
+                            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Description</label>
+                            <textarea
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              placeholder="What is this event about?"
+                              className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary h-32 outline-none resize-none"
+                            />
+                          </div>
+                        )}
+                      </form.Field>
+                    </div>
+                  )}
+
+                  {currentStep === 2 && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <form.Field name="date">
+                          {(field) => (
+                            <div>
+                              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Date</label>
+                              <input
+                                type="date"
+                                value={field.state.value}
+                                onChange={(e) => field.handleChange(e.target.value)}
+                                className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none font-bold"
+                              />
+                            </div>
+                          )}
+                        </form.Field>
+                        <form.Field name="time">
+                          {(field) => (
+                            <div>
+                              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Time</label>
+                              <input
+                                type="time"
+                                value={field.state.value}
+                                onChange={(e) => field.handleChange(e.target.value)}
+                                className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none font-bold"
+                              />
+                            </div>
+                          )}
+                        </form.Field>
+                      </div>
+                      <form.Field name="venue">
+                        {(field) => (
+                          <div>
+                            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Venue / Location</label>
+                            <input
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              placeholder="e.g. Grand Ballroom, Hilton Hotel"
+                              className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none"
+                            />
+                          </div>
+                        )}
+                      </form.Field>
+                    </div>
+                  )}
+
+                  {currentStep === 3 && (
+                    <div className="space-y-8">
+                      <div className="p-8 rounded-3xl bg-primary/5 border border-primary/10">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                            <Ticket className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="font-black text-xl italic">Ticketing & Fee</h3>
+                            <p className="text-sm text-muted-foreground">Define the cost of entry for this event.</p>
+                          </div>
+                        </div>
+
+                        <form.Field name="fee">
+                          {(field) => (
+                            <div className="space-y-2 max-w-sm">
+                              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground px-2">Entry Fee ($)</label>
+                              <div className="relative">
+                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-black text-primary">$</span>
+                                <input
+                                  type="number"
+                                  value={field.state.value}
+                                  onChange={(e) => field.handleChange(Number(e.target.value))}
+                                  className="w-full bg-background border border-border rounded-2xl py-5 pl-10 pr-6 focus:ring-2 focus:ring-primary text-2xl font-black outline-none"
+                                />
+                              </div>
+                              <p className="text-[10px] text-muted-foreground px-2 italic">Set to 0 for free events.</p>
+                            </div>
+                          )}
+                        </form.Field>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentStep === 4 && (
+                    <div className="space-y-8">
+                      <div className="flex flex-col items-center text-center py-6">
+                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6 animate-bounce">
+                          <Rocket className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-black italic">Save Your Changes?</h2>
+                        <p className="text-muted-foreground max-w-md mx-auto mt-2">Ready to broadcast the latest updates to your attendees?</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Title</p>
+                          <p className="text-lg font-bold">{title || "Untitled"}</p>
+                        </div>
+                        <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Schedule</p>
+                          <p className="text-lg font-bold">{formatDate(date)} at {formatTime(time)}</p>
+                        </div>
+                        <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Fee</p>
+                          <p className="text-lg font-bold text-primary">{form.getFieldValue("fee") === 0 ? "FREE" : `$${form.getFieldValue("fee")}`}</p>
+                        </div>
+                        <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
+                          <p className="text-lg font-bold">{form.getFieldValue("visibility")}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Action Buttons */}
+              <div className="mt-12 flex items-center justify-between pt-8 border-t border-border/50">
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all ${currentStep === 1 ? "opacity-0 invisible" : "text-muted-foreground hover:bg-secondary"
+                    }`}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  Previous
+                </button>
+
+                {currentStep < STEPS.length ? (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!isStepValid(currentStep)}
+                    className="flex items-center gap-2 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                  >
+                    Continue
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={mutation.isPending}
+                    className="flex items-center gap-3 px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
+                    Save Changes
+                  </button>
+                )}
+              </div>
+            </form>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="attendees"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
             className="space-y-8"
           >
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                <form.Field name="title">
-                  {(field) => (
-                    <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Event Title</label>
-                      <input
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="e.g. NextGen Tech Summit 2026"
-                        className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none text-lg font-bold"
-                      />
-                    </div>
-                  )}
-                </form.Field>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <form.Field name="categoryId">
-                    {(field) => (
-                      <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Category</label>
-                        <select
-                          value={field.state.value || ""}
-                          onChange={(e) => field.handleChange(e.target.value || null)}
-                          className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none font-bold"
-                        >
-                          <option value="">Select Category</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </form.Field>
-                  <form.Field name="visibility">
-                    {(field) => (
-                      <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Visibility</label>
-                        <div className="flex gap-2 p-1 bg-secondary/50 rounded-2xl border border-border">
-                          <button
-                            type="button"
-                            onClick={() => field.handleChange("PUBLIC")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${field.state.value === "PUBLIC" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
-                          >
-                            <Eye className="w-4 h-4" />
-                            Public
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => field.handleChange("PRIVATE")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${field.state.value === "PRIVATE" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
-                          >
-                            <EyeOff className="w-4 h-4" />
-                            Private
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </form.Field>
+            <div className="p-8 md:p-12 bg-card border border-border/50 rounded-4xl shadow-xl shadow-primary/5 min-h-[400px]">
+              <div className="flex items-center justify-between mb-10">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
+                    <UsersIcon className="w-6 h-6 text-primary" />
+                    Join Requests
+                  </h2>
+                  <p className="text-muted-foreground text-sm font-medium">Review and synchronize nodes attempting to join this experience.</p>
                 </div>
-
-                <form.Field name="description">
-                  {(field) => (
-                    <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Description</label>
-                      <textarea
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="What is this event about?"
-                        className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary h-32 outline-none resize-none"
-                      />
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-            )}
-
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <form.Field name="date">
-                    {(field) => (
-                      <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Date</label>
-                        <input
-                          type="date"
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none font-bold"
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-                  <form.Field name="time">
-                    {(field) => (
-                      <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Time</label>
-                        <input
-                          type="time"
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none font-bold"
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-                </div>
-                <form.Field name="venue">
-                  {(field) => (
-                    <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 block">Venue / Location</label>
-                      <input
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="e.g. Grand Ballroom, Hilton Hotel"
-                        className="w-full bg-secondary/50 border border-border rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none"
-                      />
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              <div className="space-y-8">
-                <div className="p-8 rounded-3xl bg-primary/5 border border-primary/10">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                      <Ticket className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-xl italic">Ticketing & Fee</h3>
-                      <p className="text-sm text-muted-foreground">Define the cost of entry for this event.</p>
-                    </div>
-                  </div>
-
-                  <form.Field name="fee">
-                    {(field) => (
-                      <div className="space-y-2 max-w-sm">
-                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground px-2">Entry Fee ($)</label>
-                        <div className="relative">
-                          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-black text-primary">$</span>
-                          <input
-                            type="number"
-                            value={field.state.value}
-                            onChange={(e) => field.handleChange(Number(e.target.value))}
-                            className="w-full bg-background border border-border rounded-2xl py-5 pl-10 pr-6 focus:ring-2 focus:ring-primary text-2xl font-black outline-none"
-                          />
-                        </div>
-                        <p className="text-[10px] text-muted-foreground px-2 italic">Set to 0 for free events.</p>
-                      </div>
-                    )}
-                  </form.Field>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-xs font-black uppercase tracking-widest text-primary">
+                  {requests.length} Requests
                 </div>
               </div>
-            )}
 
-            {currentStep === 4 && (
-              <div className="space-y-8">
-                <div className="flex flex-col items-center text-center py-6">
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6 animate-bounce">
-                    <Rocket className="w-10 h-10" />
-                  </div>
-                  <h2 className="text-3xl font-black italic">Save Your Changes?</h2>
-                  <p className="text-muted-foreground max-w-md mx-auto mt-2">Ready to broadcast the latest updates to your attendees?</p>
+              {isLoadingRequests ? (
+                <div className="py-24 flex flex-col items-center justify-center gap-4">
+                   <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                   <p className="text-muted-foreground font-medium italic animate-pulse">Scanning attendee nodes...</p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Title</p>
-                    <p className="text-lg font-bold">{title || "Untitled"}</p>
-                  </div>
-                  <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Schedule</p>
-                    <p className="text-lg font-bold">{formatDate(date)} at {formatTime(time)}</p>
-                  </div>
-                  <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Fee</p>
-                    <p className="text-lg font-bold text-primary">{form.getFieldValue("fee") === 0 ? "FREE" : `$${form.getFieldValue("fee")}`}</p>
-                  </div>
-                  <div className="p-6 rounded-3xl bg-secondary/30 border border-border/50">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
-                    <p className="text-lg font-bold">{form.getFieldValue("visibility")}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+              ) : (
+                <AttendeeTable eventId={eventId} requests={requests} />
+              )}
+            </div>
           </motion.div>
-        </AnimatePresence>
-
-        {/* Action Buttons */}
-        <div className="mt-12 flex items-center justify-between pt-8 border-t border-border/50">
-          <button
-            type="button"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all ${currentStep === 1 ? "opacity-0 invisible" : "text-muted-foreground hover:bg-secondary"
-              }`}
-          >
-            <ChevronLeft className="w-5 h-5" />
-            Previous
-          </button>
-
-          {currentStep < STEPS.length ? (
-            <button
-              type="button"
-              onClick={nextStep}
-              disabled={!isStepValid(currentStep)}
-              className="flex items-center gap-2 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
-            >
-              Continue
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="flex items-center gap-3 px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-            >
-              {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
-              Save Changes
-            </button>
-          )}
-        </div>
-      </form>
-
-      {/* Global Category sync indicator (subtle) */}
-      <div className="fixed bottom-6 left-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
-        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-        Synced with Planora DB
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

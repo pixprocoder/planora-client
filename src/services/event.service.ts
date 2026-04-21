@@ -9,23 +9,32 @@ import {
 export const eventService = {
   getAllCategories: async (): Promise<ICategoriesResponse> => {
     const { data } =
-      await axiosInstance.get<ICategoriesResponse>("/categories");
+      await axiosInstance.get<ICategoriesResponse>("categories");
     return data;
   },
 
-  getAllEvents: async (): Promise<IEventsResponse> => {
-    const { data } = await axiosInstance.get<IEventsResponse>("/events");
-    return data;
+  /**
+   * Fetches all public events. Supports optional query parameters for filtering.
+   */
+  getAllEvents: async (params?: Record<string, string | number | boolean | undefined>): Promise<IEventsResponse> => {
+    const response = await axiosInstance.get<IEventsResponse>("events", { params });
+    return response.data;
   },
 
+  /**
+   * Fetches a single public event by its ID
+   */
+  getEventById: async (id: string): Promise<IEventResponse> => {
+    const response = await axiosInstance.get<IEventResponse>(`events/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Fetches events created by the currently authenticated user
+   */
   getMyEvents: async (): Promise<IEventsResponse> => {
     const { data } =
-      await axiosInstance.get<IEventsResponse>("/events/my-events");
-    return data;
-  },
-
-  getEventById: async (id: string): Promise<IEventResponse> => {
-    const { data } = await axiosInstance.get<IEventResponse>(`/events/${id}`);
+      await axiosInstance.get<IEventsResponse>("events/my-events");
     return data;
   },
 
@@ -33,7 +42,7 @@ export const eventService = {
     eventData: ICreateEventRequest,
   ): Promise<IEventResponse> => {
     const { data } = await axiosInstance.post<IEventResponse>(
-      "/events",
+      "events",
       eventData,
     );
     return data;
@@ -44,7 +53,7 @@ export const eventService = {
     eventData: Partial<ICreateEventRequest>,
   ): Promise<IEventResponse> => {
     const { data } = await axiosInstance.patch<IEventResponse>(
-      `/events/${id}`,
+      `events/${id}`,
       eventData,
     );
     return data;
@@ -53,7 +62,7 @@ export const eventService = {
   deleteEvent: async (
     id: string,
   ): Promise<{ success: boolean; message: string }> => {
-    const { data } = await axiosInstance.delete(`/events/${id}`);
+    const { data } = await axiosInstance.delete(`events/${id}`);
     return data;
   },
 };

@@ -1,20 +1,25 @@
-import { toast } from "sonner";
 import { AxiosError } from "axios";
+import { toast } from "sonner";
 
 interface ApiErrorResponse {
   message?: string;
   success?: boolean;
 }
 
-export const handleError = (error: unknown, fallbackMessage = "An unexpected error occurred") => {
+export const handleError = (
+  error: unknown,
+  fallbackMessage = "An unexpected error occurred",
+) => {
   console.error("Error caught by global handler:", error);
 
   if (error instanceof AxiosError) {
     const data = error.response?.data as ApiErrorResponse;
     const message = data?.message || error.message || fallbackMessage;
-    
+
     toast.error(message, {
-      description: error.response?.status ? `Error Code: ${error.response.status}` : undefined,
+      description: error.response?.status
+        ? `Error Code: ${error.response.status}`
+        : undefined,
     });
     return;
   }

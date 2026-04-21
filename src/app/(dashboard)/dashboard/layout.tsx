@@ -1,6 +1,6 @@
 "use client";
 
-import { DASHBOARD_NAV_LINKS } from "@/constants";
+import { ADMIN_NAV_LINKS, USER_NAV_LINKS } from "@/constants";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -45,7 +45,8 @@ export default function DashboardLayout(props: {
 
   if (!session) return null;
 
-  const role = session.user.role?.toUpperCase();
+  const role = session.user.role?.toUpperCase() || "USER";
+  const navLinks = role === "ADMIN" ? ADMIN_NAV_LINKS : USER_NAV_LINKS;
 
   return (
     <div className="min-h-screen bg-background flex text-foreground">
@@ -60,7 +61,7 @@ export default function DashboardLayout(props: {
         </div>
 
         <nav className="flex-1 space-y-2">
-          {DASHBOARD_NAV_LINKS.map((item) => (
+          {navLinks.map((item) => (
             <Link
               key={item.name}
               href={item.href}

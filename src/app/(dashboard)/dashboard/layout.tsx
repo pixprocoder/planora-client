@@ -3,6 +3,7 @@
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
+import { ISession } from "@/types";
 import { Bell, Calendar, LayoutDashboard, Loader2, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,7 +14,10 @@ export default function DashboardLayout(props: {
   admin: ReactNode;
   user: ReactNode;
 }) {
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = sessionData.data as ISession | null;
+  const isPending = sessionData.isPending;
+
   const { setAuth } = useAuthStore();
   const router = useRouter();
 

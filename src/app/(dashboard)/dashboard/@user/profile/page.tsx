@@ -3,7 +3,7 @@
 import { useSession } from "@/lib/auth-client";
 import { ISession } from "@/types";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Shield, Camera } from "lucide-react";
+import { Camera, Mail, Phone, Shield, User } from "lucide-react";
 import Image from "next/image";
 
 export default function ProfilePage() {
@@ -15,7 +15,7 @@ export default function ProfilePage() {
   const { user } = session;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       className="max-w-4xl mx-auto space-y-10"

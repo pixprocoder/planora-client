@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -59,8 +59,8 @@ export function Navbar() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="flex items-center gap-2 group relative z-50"
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -98,9 +98,9 @@ export function Navbar() {
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
                 </Link>
-                
+
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => {
                       setIsProfileOpen(!isProfileOpen);
                       setIsMobileMenuOpen(false);
@@ -175,8 +175,8 @@ export function Navbar() {
                 </Link>
               </>
             )}
-            
-            <button 
+
+            <button
               onClick={() => {
                 setIsMobileMenuOpen(!isMobileMenuOpen);
                 setIsProfileOpen(false);

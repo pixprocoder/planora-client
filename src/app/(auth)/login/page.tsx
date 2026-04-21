@@ -1,16 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { Mail, Lock, Loader2 } from "lucide-react";
-import { FaGoogle } from "react-icons/fa";
-import { toast } from "sonner";
-import { useForm } from "@tanstack/react-form";
-import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -19,6 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { signIn } from "@/lib/auth-client";
+import { useForm } from "@tanstack/react-form";
+import { motion } from "framer-motion";
+import { Loader2, Lock, Mail } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FaGoogle } from "react-icons/fa";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,9 +31,9 @@ export default function LoginPage() {
     onSubmit: async ({ value }) => {
       try {
         await signIn.email(
-          { 
-            email: value.email, 
-            password: value.password 
+          {
+            email: value.email,
+            password: value.password
           },
           {
             onSuccess: () => {
@@ -110,9 +110,8 @@ export default function LoginPage() {
             }}
             className="space-y-4"
           >
-            <form.Field
-              name="email"
-              children={(field) => (
+            <form.Field name="email">
+              {(field) => (
                 <div className="space-y-2">
                   <Label htmlFor={field.name}>Email</Label>
                   <div className="relative">
@@ -131,11 +130,10 @@ export default function LoginPage() {
                   </div>
                 </div>
               )}
-            />
+            </form.Field>
 
-            <form.Field
-              name="password"
-              children={(field) => (
+            <form.Field name="password">
+              {(field) => (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor={field.name}>Password</Label>
@@ -162,11 +160,10 @@ export default function LoginPage() {
                   </div>
                 </div>
               )}
-            />
+            </form.Field>
 
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-              children={([canSubmit, isSubmitting]) => (
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit, isSubmitting]) => (
                 <Button
                   type="submit"
                   disabled={!canSubmit || isSubmitting}
@@ -179,8 +176,9 @@ export default function LoginPage() {
                   )}
                 </Button>
               )}
-            />
+            </form.Subscribe>
           </form>
+
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2 pb-8">

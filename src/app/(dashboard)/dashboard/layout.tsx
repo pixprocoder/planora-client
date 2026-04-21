@@ -1,10 +1,12 @@
 "use client";
 
+import { DASHBOARD_NAV_LINKS } from "@/constants";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { ISession } from "@/types";
-import { Bell, Calendar, LayoutDashboard, Loader2, Settings, User } from "lucide-react";
+import { Bell, Calendar, Loader2, User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -58,13 +60,7 @@ export default function DashboardLayout(props: {
         </div>
 
         <nav className="flex-1 space-y-2">
-          {[
-            { name: "Overview", icon: LayoutDashboard, href: "/dashboard" },
-            { name: "My Events", icon: Calendar, href: "/dashboard/events" },
-            { name: "Profile", icon: User, href: "/dashboard/profile" },
-            { name: "Notifications", icon: Bell, href: "/dashboard/notifications" },
-            { name: "Settings", icon: Settings, href: "/dashboard/settings" },
-          ].map((item) => (
+          {DASHBOARD_NAV_LINKS.map((item) => (
             <Link
               key={item.name}
               href={item.href}
@@ -81,9 +77,16 @@ export default function DashboardLayout(props: {
 
         {/* User Card */}
         <div className="mt-auto p-4 rounded-2xl bg-secondary/50 border border-border/50 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden relative">
             {session.user.image ? (
-              <img src={session.user.image} alt={session.user.name} className="w-full h-full object-cover" />
+              <Image
+                src={session.user.image}
+                alt={session.user.name}
+                width={40}
+                height={40}
+                className="object-cover"
+                unoptimized
+              />
             ) : (
               <User className="w-6 h-6 text-primary" />
             )}

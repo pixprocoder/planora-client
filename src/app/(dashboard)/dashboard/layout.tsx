@@ -1,15 +1,15 @@
 "use client";
 
-import { ADMIN_NAV_LINKS, USER_NAV_LINKS } from "@/constants";
+import { SidebarContent } from "@/components/dashboard/SidebarContent";
 import { useSession } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { ISession } from "@/types";
-import { Bell, Calendar, Loader2, User } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, Menu, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export default function DashboardLayout(props: {
   children: ReactNode;
@@ -22,6 +22,7 @@ export default function DashboardLayout(props: {
 
   const { setAuth } = useAuthStore();
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -31,6 +32,15 @@ export default function DashboardLayout(props: {
       setAuth(session.user);
     }
   }, [session, isPending, router, setAuth]);
+
+  // Handle ESC key to close mobile menu
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
   if (isPending) {
     return (
@@ -46,78 +56,89 @@ export default function DashboardLayout(props: {
   if (!session) return null;
 
   const role = session.user.role?.toUpperCase() || "USER";
-  const navLinks = role === "ADMIN" ? ADMIN_NAV_LINKS : USER_NAV_LINKS;
 
   return (
     <div className="min-h-screen bg-background flex text-foreground">
-      {/* Premium Sidebar (remains shared) */}
-      <aside className="w-64 border-r border-border bg-card/30 backdrop-blur-xl hidden md:flex flex-col p-6 sticky top-0 h-screen">
-        {/* ... Sidebar content ... */}
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Calendar className="text-white w-5 h-5" />
-          </div>
-          <span className="text-xl font-bold tracking-tight">Planora</span>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {navLinks.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group hover:bg-primary/10 hover:text-primary",
-                "text-muted-foreground"
-              )}
-            >
-              <item.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User Card */}
-        <div className="mt-auto p-4 rounded-2xl bg-secondary/50 border border-border/50 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden relative">
-            {session.user.image ? (
-              <Image
-                src={session.user.image}
-                alt={session.user.name}
-                width={40}
-                height={40}
-                className="object-cover"
-                unoptimized
-              />
-            ) : (
-              <User className="w-6 h-6 text-primary" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold truncate">{session.user.name}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{session.user.email}</p>
-          </div>
-        </div>
+      {/* Desktop Sidebar */}
+      <aside className="w-64 border-r border-border bg-card/30 backdrop-blur-xl hidden md:flex flex-col p-6 sticky top-0 h-screen overflow-y-auto">
+        <SidebarContent session={session} />
       </aside>
 
+      {/* Mobile Sidebar (Drawer) */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 md:hidden"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-[280px] bg-card border-r border-border p-6 z-60 md:hidden shadow-2xl flex flex-col"
+            >
+              <SidebarContent
+                session={session}
+                closeMobileMenu={() => setIsMobileMenuOpen(false)}
+              />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative overflow-hidden">
+      <main className="flex-1 flex flex-col relative overflow-hidden min-w-0">
         {/* Background Gradients */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -z-10" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary/5 blur-[100px] rounded-full -z-10" />
 
-        <header className="h-16 border-b border-border flex items-center justify-between px-8 bg-background/50 backdrop-blur-sm sticky top-0 z-10">
-          <h1 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-            {role === "ADMIN" ? "Admin Panel" : "User Dashboard"}
-          </h1>
+        <header className="h-20 md:h-16 border-b border-border flex items-center justify-between px-6 md:px-8 bg-background/50 backdrop-blur-sm sticky top-0 z-40">
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-secondary rounded-full transition-colors relative">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 -ml-2 md:hidden hover:bg-secondary rounded-xl transition-colors"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
+            <h1 className="text-sm font-bold text-muted-foreground uppercase tracking-widest truncate max-w-[200px] md:max-w-none">
+              {role === "ADMIN" ? "Admin Panel" : "User Dashboard"}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-secondary/30 border border-border/50 hover:bg-secondary/50 transition-all group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center overflow-hidden relative border border-primary/20 group-hover:scale-105 transition-transform">
+                {session.user.image ? (
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name}
+                    width={36}
+                    height={36}
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-primary" />
+                )}
+              </div>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-xs font-bold truncate max-w-[100px]">{session.user.name}</span>
+                <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">{session.user.email}</span>
+              </div>
+            </Link>
           </div>
         </header>
 
-        <div className="p-8 flex-1 overflow-y-auto">
+        <div className="p-6 md:p-8 flex-1 overflow-y-auto">
           {/* Parallel Slot Rendering Logic */}
           {role === "ADMIN" ? props.admin : props.user}
 

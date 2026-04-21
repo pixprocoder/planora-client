@@ -28,7 +28,7 @@ export default function AdminNotificationsPage() {
           { label: "Active Users", value: "1,240", color: "text-primary", icon: Activity },
           { label: "Tasks Cleared", value: "98%", color: "text-emerald-500", icon: CheckCircle },
         ].map((stat) => (
-          <div key={stat.label} className="p-6 rounded-[2rem] bg-card border border-border/50">
+          <div key={stat.label} className="p-6 rounded-4xl bg-card border border-border/50">
             <stat.icon className={`w-8 h-8 ${stat.color} mb-4`} />
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
             <p className="text-2xl font-black">{stat.value}</p>
@@ -38,15 +38,21 @@ export default function AdminNotificationsPage() {
 
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="p-6 rounded-[2rem] bg-card border border-border/50 flex items-center gap-6 hover:bg-secondary/10 transition-colors">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="p-6 rounded-4xl bg-card border border-border/50 flex items-center gap-6 group hover:translate-x-2 transition-transform duration-300"
+          >
+            <div className="w-12 h-12 rounded-3xl bg-primary/10 flex items-center justify-center text-primary">
               <Bell className="w-6 h-6" />
             </div>
             <div>
               <h3 className="font-bold">Global System Alert {i}</h3>
               <p className="text-sm text-muted-foreground">Detailed logs of administrative actions or system warnings...</p>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </motion.div>

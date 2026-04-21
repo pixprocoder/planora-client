@@ -3,6 +3,7 @@ import { Bell, Calendar, LayoutDashboard, Settings, User, Layers, Users } from "
 export const ADMIN_NAV_LINKS = [
   { name: "Overview", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Global Events", icon: Calendar, href: "/dashboard/events" },
+  { name: "Profile", icon: User, href: "/dashboard/profile" },
   { name: "Categories", icon: Layers, href: "/dashboard/categories" },
   { name: "User Management", icon: Users, href: "/dashboard/users" },
   { name: "System Notifications", icon: Bell, href: "/dashboard/notifications" },

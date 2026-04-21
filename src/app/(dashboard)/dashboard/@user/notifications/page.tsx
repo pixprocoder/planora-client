@@ -44,7 +44,7 @@ export default function NotificationsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="p-6 rounded-[2rem] bg-card border border-border/50 flex items-center gap-6 group hover:translate-x-2 transition-transform duration-300"
+            className="p-6 rounded-4xl bg-card border border-border/50 flex items-center gap-6 group hover:translate-x-2 transition-transform duration-300"
           >
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
               item.type === "system" ? "bg-rose-500/10 text-rose-500" : "bg-emerald-500/10 text-emerald-500"

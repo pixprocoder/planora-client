@@ -4,8 +4,7 @@ import { eventService } from "@/services/event.service";
 import { 
     EventVisibility, 
     ICreateEventRequest, 
-    IEventsResponse,
-    IEvent 
+    IEventsResponse 
 } from "@/types/event.types";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

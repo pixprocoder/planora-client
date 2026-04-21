@@ -1,8 +1,12 @@
 "use client";
 
 import { eventService } from "@/services/event.service";
-import { EventVisibility, ICreateEventRequest } from "@/types/event.types";
-import { formatDate, formatTime } from "@/utils/date";
+import { 
+    EventVisibility, 
+    ICreateEventRequest, 
+    IEventsResponse,
+    IEvent 
+} from "@/types/event.types";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -15,12 +19,14 @@ import {
   Loader2,
   MapPin,
   Rocket,
+  Settings,
   Ticket,
   Type
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { formatDate, formatTime } from "@/utils/date";
 
 const STEPS = [
   { id: 1, title: "Basic Info", icon: Type },
@@ -29,46 +35,76 @@ const STEPS = [
   { id: 4, title: "Preview", icon: Rocket }
 ];
 
-export default function CreateEventPage() {
+export default function ManageEventPage() {
   const router = useRouter();
+  const params = useParams();
+  const eventId = params.id as string;
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Fetch real categories from the server
-  const { data: categoriesData, isLoading: isLoadingCategories } = useQuery({
+  // 1. Fetch Categories
+  const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: eventService.getAllCategories
   });
-
   const categories = categoriesData?.data || [];
 
-  // TanStack Form Implementation
+  // 2. Optimization: Peek into "my-events" cache for immediate data
+  const cachedEvents = queryClient.getQueryData<IEventsResponse>(["my-events"]);
+  const cachedEvent = cachedEvents?.data?.find((e) => e.id === eventId);
+
+  // 3. Fetch/Sync Event Details
+  const { data: eventResponse, isLoading: isLoadingEvent } = useQuery({
+    queryKey: ["events", eventId],
+    queryFn: () => eventService.getEventById(eventId),
+    initialData: cachedEvent ? { data: cachedEvent, success: true, message: "From Cache" } : undefined,
+  });
+  const eventData = eventResponse?.data;
+
+  // 4. TanStack Form Implementation (with cached defaults)
   const form = useForm({
     defaultValues: {
-      title: "",
-      description: "",
-      venue: "",
-      date: "",
-      time: "",
-      visibility: "PUBLIC" as EventVisibility,
-      fee: 0,
-      categoryId: null as string | null,
+      title: eventData?.title || "",
+      description: eventData?.description || "",
+      venue: eventData?.venue || "",
+      date: eventData?.date || "",
+      time: eventData?.time || "",
+      visibility: (eventData?.visibility || "PUBLIC") as EventVisibility,
+      fee: eventData?.fee || 0,
+      categoryId: eventData?.categoryId || null,
     },
     onSubmit: async ({ value }) => {
       mutation.mutate(value as ICreateEventRequest);
     },
   });
 
+  // 4. Hydrate Form on Data Load
+  useEffect(() => {
+    if (eventData) {
+      form.reset({
+        title: eventData.title,
+        description: eventData.description,
+        venue: eventData.venue,
+        date: eventData.date,
+        time: eventData.time,
+        visibility: eventData.visibility,
+        fee: eventData.fee,
+        categoryId: eventData.categoryId as string,
+      });
+    }
+  }, [eventData, form]);
+
   const mutation = useMutation({
-    mutationFn: eventService.createEvent,
+    mutationFn: (data: ICreateEventRequest) => eventService.updateEvent(eventId, data),
     onSuccess: () => {
-      toast.success("Event launched successfully!");
+      toast.success("Event updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["my-events"] });
+      queryClient.invalidateQueries({ queryKey: ["events", eventId] });
       router.push("/dashboard/events");
     },
     onError: (error: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const message = (error as any)?.response?.data?.message || "Failed to create event";
+      const message = (error as any)?.response?.data?.message || "Failed to update event";
       toast.error(message);
     }
   });
@@ -83,7 +119,6 @@ export default function CreateEventPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  // Correct useStore pattern for @tanstack/react-form v1.29.0
   const formValues = useStore(form.store, (state) => state.values);
   const { title, description, date, time, venue } = formValues;
 
@@ -93,12 +128,26 @@ export default function CreateEventPage() {
     return true;
   };
 
+  if (isLoadingEvent) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="text-muted-foreground animate-pulse font-medium italic">Fetching event blueprints...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto pb-20">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-black tracking-tight">Create New Event</h1>
-        <p className="text-muted-foreground mt-1">Synchronized with Planora Server Schema.</p>
+      <div className="mb-10 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight">Manage Event</h1>
+          <p className="text-muted-foreground mt-1">Update your event settings and logistics.</p>
+        </div>
+        <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground">
+          <Settings className="w-7 h-7" />
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -311,8 +360,8 @@ export default function CreateEventPage() {
                   <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6 animate-bounce">
                     <Rocket className="w-10 h-10" />
                   </div>
-                  <h2 className="text-3xl font-black italic">Ready to Sync?</h2>
-                  <p className="text-muted-foreground max-w-md mx-auto mt-2">Your event is ready to be sent to the Planora Server.</p>
+                  <h2 className="text-3xl font-black italic">Save Your Changes?</h2>
+                  <p className="text-muted-foreground max-w-md mx-auto mt-2">Ready to broadcast the latest updates to your attendees?</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -368,18 +417,17 @@ export default function CreateEventPage() {
               className="flex items-center gap-3 px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
             >
               {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
-              Launch Event
+              Save Changes
             </button>
           )}
         </div>
       </form>
 
-      {isLoadingCategories && (
-        <div className="fixed bottom-10 right-10 p-4 bg-primary text-white rounded-2xl shadow-xl flex items-center gap-3 animate-pulse">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          Synchronizing Categories...
-        </div>
-      )}
+      {/* Global Category sync indicator (subtle) */}
+      <div className="fixed bottom-6 left-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        Synced with Planora DB
+      </div>
     </div>
   );
 }

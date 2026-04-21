@@ -11,8 +11,10 @@ import {
   MapPin,
   Plus,
   Search,
-  Ticket
+  Ticket,
+  Clock
 } from "lucide-react";
+import { formatDate, formatTime } from "@/utils/date";
 import Link from "next/link";
 
 export default function EventsPage() {
@@ -112,13 +114,25 @@ export default function EventsPage() {
                   {event.venue}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  {formatDate(event.date)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4" />
+                  {formatTime(event.time)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Ticket className="w-4 h-4" />
                   {event.fee === 0 ? "Free Admission" : `$${event.fee}`}
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-colors ${
+                  event.visibility === "PUBLIC" 
+                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                    : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                }`}>
                   {event.visibility}
                 </span>
                 <Link

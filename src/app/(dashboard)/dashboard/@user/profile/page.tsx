@@ -3,7 +3,7 @@
 import { useSession } from "@/lib/auth-client";
 import { ISession } from "@/types";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Shield, Camera } from "lucide-react";
+import { Camera, Mail, Phone, Shield, User } from "lucide-react";
 import Image from "next/image";
 
 export default function ProfilePage() {
@@ -15,7 +15,7 @@ export default function ProfilePage() {
   const { user } = session;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       className="max-w-4xl mx-auto space-y-10"
@@ -52,7 +52,7 @@ export default function ProfilePage() {
           { label: "Account Status", value: user.status || "Active", icon: Shield },
           { label: "Email Address", value: user.email, icon: Mail },
         ].map((item) => (
-          <div key={item.label} className="p-8 rounded-[2rem] bg-card border border-border/50 flex items-center gap-6">
+          <div key={item.label} className="p-8 rounded-4xl bg-card border border-border/50 flex items-center gap-6">
             <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center">
               <item.icon className="w-6 h-6 text-primary" />
             </div>

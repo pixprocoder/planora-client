@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-  baseURL: "https://planora-api.pixprocoder.com",
+  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL_API_URL!,
 });
 
 export const { signIn, signUp, useSession, signOut } = authClient;

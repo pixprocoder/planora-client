@@ -1,28 +1,33 @@
 "use client";
 
+import { authClient } from "@/lib/auth-client";
+import { eventService } from "@/services/event.service";
+import { joinRequestService } from "@/services/joinRequest.service";
+import { reviewService } from "@/services/review.service";
+import { formatDate, formatTime } from "@/utils/date";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
+  CheckCircle2,
   ChevronLeft,
   Clock,
   Info,
+  Loader2,
   MapPin,
+  MessageSquare,
+  Send,
   Share2,
   ShieldCheck,
-  Users,
-  Loader2,
   Sparkles as SparklesIcon,
-  CheckCircle2
+  Star,
+  UserCircle2,
+  Users
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { eventService } from "@/services/event.service";
-import { joinRequestService } from "@/services/joinRequest.service";
-import { formatDate, formatTime } from "@/utils/date";
-import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 export default function EventDetailsPage() {
@@ -32,6 +37,11 @@ export default function EventDetailsPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { data: session } = authClient.useSession();
 
+  // Review Form State
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [hoverRating, setHoverRating] = useState(0);
+
   // 1. Fetch Dynamic Event Data
   const { data: eventResponse, isLoading, isError } = useQuery({
     queryKey: ["event", id],
@@ -40,7 +50,7 @@ export default function EventDetailsPage() {
   });
   const event = eventResponse?.data;
 
-  // 2. Fetch User's Join Requests to check if already requested
+  // 2. Fetch User's Join Requests
   const { data: myRequestsResponse } = useQuery({
     queryKey: ["my-join-requests"],
     queryFn: joinRequestService.getMyRequests,
@@ -48,17 +58,39 @@ export default function EventDetailsPage() {
   });
   const hasRequested = myRequestsResponse?.data?.some(req => req.eventId === id);
   const myRequest = myRequestsResponse?.data?.find(req => req.eventId === id);
+  const isApprovedParticipant = myRequest?.status === "APPROVED";
 
-  // 3. Mutation for Joining Event
+  // 3. Fetch Event Reviews
+  const { data: reviewsResponse, isLoading: isLoadingReviews } = useQuery({
+    queryKey: ["event-reviews", id],
+    queryFn: () => reviewService.getEventReviews(id as string),
+    enabled: !!id,
+  });
+  const reviews = reviewsResponse?.data || [];
+
+  // 4. Mutations
   const joinMutation = useMutation({
     mutationFn: () => joinRequestService.createJoinRequest({ eventId: id as string }),
     onSuccess: () => {
       toast.success("Join request sent! The organizer will review it.");
       queryClient.invalidateQueries({ queryKey: ["my-join-requests"] });
     },
-    onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      const message = axiosError?.response?.data?.message || "Failed to send join request";
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to send join request";
+      toast.error(message);
+    }
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: () => reviewService.createReview({ eventId: id as string, rating, comment }),
+    onSuccess: () => {
+      toast.success("Experience feedback synchronized!");
+      setRating(0);
+      setComment("");
+      queryClient.invalidateQueries({ queryKey: ["event-reviews", id] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to submit review";
       toast.error(message);
     }
   });
@@ -72,11 +104,23 @@ export default function EventDetailsPage() {
     joinMutation.mutate();
   };
 
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating === 0) {
+      toast.error("Please select a merit rating node (1-5 stars)");
+      return;
+    }
+    reviewMutation.mutate();
+  };
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 400);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const hasEventCommenced = event ? new Date(event.date).setHours(0, 0, 0, 0) <= new Date().setHours(0, 0, 0, 0) : false;
+  const canReview = isApprovedParticipant && hasEventCommenced;
 
   if (isLoading) {
     return (
@@ -95,7 +139,7 @@ export default function EventDetailsPage() {
         </div>
         <div className="space-y-2">
           <h1 className="text-3xl font-bold italic uppercase tracking-tighter">Event Not Found</h1>
-          <p className="text-muted-foreground">The experience you are looking for doesn&apos;t exist or has been removed from the Planora Feed.</p>
+          <p className="text-muted-foreground">The experience you are looking for doesn&apos;t exist or has been removed.</p>
         </div>
         <Link href="/events" className="text-primary font-black uppercase tracking-widest hover:underline flex items-center gap-2">
           <ChevronLeft className="w-5 h-5" />
@@ -128,13 +172,13 @@ export default function EventDetailsPage() {
                   <p className="text-[10px] text-primary font-black uppercase tracking-widest">{formatDate(event.date)}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={handleJoinClick}
                 disabled={hasRequested || joinMutation.isPending}
                 className="bg-primary text-primary-foreground px-8 py-2.5 rounded-xl font-black uppercase text-xs tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
               >
-                {joinMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 
-                 hasRequested ? `Status: ${myRequest?.status}` : `Secure Spot - $${event.fee}`}
+                {joinMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                  hasRequested ? `Status: ${myRequest?.status}` : `Secure Spot - $${event.fee}`}
               </button>
             </div>
           </motion.div>
@@ -177,24 +221,24 @@ export default function EventDetailsPage() {
         {/* Hero Content */}
         <div className="absolute bottom-12 left-0 w-full px-8">
           <div className="max-w-7xl mx-auto space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-[10px] font-black uppercase tracking-widest text-primary"
+            >
+              <SparklesIcon className="w-3 h-3 fill-current" />
+              {event.category?.name || "Uncategorized"}
+            </motion.div>
+            {event.visibility === "PRIVATE" && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-[10px] font-black uppercase tracking-widest text-primary"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-500/20 backdrop-blur-md border border-rose-500/30 text-[10px] font-black uppercase tracking-widest text-rose-500"
               >
-                <SparklesIcon className="w-3 h-3 fill-current" />
-                {event.category?.name || "Uncategorized"}
+                <ShieldCheck className="w-3 h-3" />
+                Private Access
               </motion.div>
-              {event.visibility === "PRIVATE" && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-500/20 backdrop-blur-md border border-rose-500/30 text-[10px] font-black uppercase tracking-widest text-rose-500"
-                >
-                  <ShieldCheck className="w-3 h-3" />
-                  Private Access
-                </motion.div>
-              )}
+            )}
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -244,11 +288,6 @@ export default function EventDetailsPage() {
                 <h2 className="text-3xl font-black tracking-tight uppercase italic underline decoration-primary decoration-4 underline-offset-4">Experience Intel</h2>
                 <div className="prose prose-invert max-w-none text-muted-foreground leading-relaxed text-lg font-medium">
                   <p>{event.description}</p>
-                  <p className="mt-4">
-                    Join us at <strong>{event.venue}</strong> for an unforgettable session.
-                    This event is strictly monitored via our 4-way approval matrix to ensure the highest
-                    standard of safety and engagement for all attendees.
-                  </p>
                 </div>
               </div>
 
@@ -261,6 +300,141 @@ export default function EventDetailsPage() {
                   <ShieldCheck className="w-4 h-4" />
                   Verified Event
                 </div>
+              </div>
+            </div>
+
+            {/* Review Matrix Section */}
+            <div className="p-8 md:p-14 rounded-[3.5rem] bg-card/40 backdrop-blur-xl border border-border/50 shadow-2xl space-y-12">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
+                    <Star className="w-8 h-8 text-amber-400" />
+                    Discovery Merit
+                  </h2>
+                  <p className="text-muted-foreground font-medium italic">High-fidelity feedback from verified participants.</p>
+                </div>
+                <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-secondary/50 border border-border font-black uppercase text-xs">
+                  <span className="text-primary text-lg">{reviews.length}</span>
+                  Nodes
+                </div>
+              </div>
+
+              {/* 1. Leave a Review Feed (Conditional) */}
+              {canReview && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-8 rounded-[2.5rem] bg-primary/5 border border-primary/20 space-y-8"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                      <MessageSquare className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-black italic uppercase tracking-tight">Sync Your Experience</h4>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">Share your feedback with the platform.</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleReviewSubmit} className="space-y-6">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Merit Rating</label>
+                      <div className="flex items-center gap-3">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            onClick={() => setRating(star)}
+                            className="transition-all hover:scale-125"
+                          >
+                            <Star
+                              className={`w-8 h-8 ${(hoverRating || rating) >= star
+                                  ? "text-amber-400 fill-amber-400"
+                                  : "text-muted-foreground/30"
+                                }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Participant Intel</label>
+                      <textarea
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Tell us about your discovery..."
+                        className="w-full bg-background border border-border/50 rounded-2xl p-5 focus:ring-2 focus:ring-primary outline-none h-32 resize-none italic font-medium"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={reviewMutation.isPending}
+                      className="flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {reviewMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      Deploy Feedback
+                    </button>
+                  </form>
+                </motion.div>
+              )}
+
+              {/* 2. Review List Trajectory */}
+              <div className="space-y-6">
+                {isLoadingReviews ? (
+                  <div className="py-20 flex flex-col items-center justify-center gap-4">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse italic">Scanning Merit Matrix...</p>
+                  </div>
+                ) : reviews.length > 0 ? (
+                  reviews.map((review, i) => (
+                    <motion.div
+                      key={review.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="p-8 rounded-[2.5rem] bg-secondary/20 border border-border/40 backdrop-blur-sm space-y-6 group hover:border-primary/30 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-secondary border border-border/50 flex items-center justify-center overflow-hidden">
+                            {review.user?.image ? (
+                              <img src={review.user.image} alt={review.user.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <UserCircle2 className="w-8 h-8 text-muted-foreground/30" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-black italic uppercase tracking-tight">{review.user?.name}</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground italic">Verified Participant</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${review.rating >= star
+                                  ? "text-amber-400 fill-amber-400"
+                                  : "text-muted-foreground/20"
+                                }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="prose prose-invert">
+                        <p className="text-muted-foreground font-medium italic leading-relaxed">&quot;{review.comment}&quot;</p>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="py-20 flex flex-col items-center justify-center text-center opacity-50 space-y-4">
+                    <MessageSquare className="w-12 h-12 text-muted-foreground" />
+                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground italic">No merit nodes located yet.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -283,17 +457,17 @@ export default function EventDetailsPage() {
                     Request {myRequest?.status}
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={handleJoinClick}
                     disabled={joinMutation.isPending}
                     className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-black text-lg uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
                   >
-                    {joinMutation.isPending ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 
-                     event.visibility === "PRIVATE" ? "Request Access" : "Secure Access"}
+                    {joinMutation.isPending ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> :
+                      event.visibility === "PRIVATE" ? "Request Access" : "Secure Access"}
                   </button>
-                 )}
+                )}
                 <p className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                   Planora Authenticated Discovery
+                  Planora Authenticated Discovery
                 </p>
               </div>
 

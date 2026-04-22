@@ -2,22 +2,22 @@
 import { useSession } from "@/lib/auth-client";
 import { eventService } from "@/services/event.service";
 import { ISession } from "@/types";
+import { formatDate, formatTime } from "@/utils/date";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowRight,
   Calendar,
+  Clock,
   Filter,
   Loader2,
   MapPin,
   Plus,
   Search,
-  Ticket,
-  Clock,
   ShieldAlert,
-  ArrowRight,
+  Ticket,
   Users as UsersIcon
 } from "lucide-react";
-import { formatDate, formatTime } from "@/utils/date";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -33,8 +33,8 @@ export default function EventsPage() {
   });
 
   const events = data?.data || [];
-  
-  const filteredEvents = events.filter(e => 
+
+  const filteredEvents = events.filter(e =>
     e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.venue.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -93,7 +93,7 @@ export default function EventsPage() {
             <p className="text-muted-foreground font-black italic uppercase text-xs tracking-[0.2em] animate-pulse">Syncing matrix...</p>
           </div>
         ) : filteredEvents.length > 0 ? (
-          <motion.div 
+          <motion.div
             layout
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 px-2"
           >
@@ -163,7 +163,7 @@ export default function EventsPage() {
                       {event.visibility}
                     </span>
                   </div>
-                  
+
                   <Link
                     href={`/dashboard/events/${event.id}`}
                     className="flex items-center gap-3 text-xs font-black italic uppercase tracking-widest text-primary bg-primary/5 px-8 py-4 rounded-2xl group/link hover:bg-primary hover:text-white transition-all shadow-lg shadow-primary/5 active:scale-95 border border-primary/10"
@@ -176,7 +176,7 @@ export default function EventsPage() {
             ))}
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="min-h-[500px] flex flex-col items-center justify-center text-center p-24 bg-secondary/5 rounded-[5rem] border-2 border-dashed border-border/40 mx-2"

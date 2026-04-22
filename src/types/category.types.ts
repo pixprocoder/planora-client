@@ -1,3 +1,5 @@
+import { TApiResponse } from "./response.types";
+
 export interface ICategory {
   id: string;
   name: string;
@@ -5,8 +7,5 @@ export interface ICategory {
   updatedAt: string;
 }
 
-export interface ICategoriesResponse {
-  success: boolean;
-  message: string;
-  data: ICategory[];
-}
+export type ICategoryResponse = TApiResponse<ICategory>;
+export type ICategoriesResponse = TApiResponse<ICategory[]>;

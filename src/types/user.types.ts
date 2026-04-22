@@ -1,3 +1,5 @@
+import { TApiResponse } from "./response.types";
+
 export type UserRole = "ADMIN" | "USER";
 export type UserStatus = "ACTIVE" | "BANNED";
 
@@ -9,15 +11,16 @@ export interface IUser {
   role: UserRole;
   status: UserStatus;
   phone?: string | null;
+  _count?: {
+    organizedEvents: number;
+    joinRequests: number;
+    reviews: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
 
-export interface IUserResponse {
-  success: boolean;
-  message: string;
-  data: IUser;
-}
+export type IUserResponse = TApiResponse<IUser>;
 
 export interface IUpdateProfileRequest {
   name?: string;

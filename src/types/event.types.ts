@@ -1,3 +1,5 @@
+import { TApiResponse } from "./response.types";
+
 export type EventVisibility = "PUBLIC" | "PRIVATE";
 
 export interface IEvent {
@@ -25,6 +27,7 @@ export interface IEvent {
     requests: number;
     reviews: number;
   };
+  capacity: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,14 +43,5 @@ export interface ICreateEventRequest {
   categoryId?: string | null;
 }
 
-export interface IEventResponse {
-  success: boolean;
-  message: string;
-  data: IEvent;
-}
-
-export interface IEventsResponse {
-  success: boolean;
-  message: string;
-  data: IEvent[];
-}
+export type IEventResponse = TApiResponse<IEvent>;
+export type IEventsResponse = TApiResponse<IEvent[]>;

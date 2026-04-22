@@ -32,6 +32,14 @@ export const joinRequestService = {
   },
 
   /**
+   * Get all join requests for events organized by the current user (Organizers)
+   */
+  getOrganizerAllRequests: async (): Promise<IJoinRequestsResponse> => {
+    const response = await axiosInstance.get<IJoinRequestsResponse>("join-requests/organizer/all");
+    return response.data;
+  },
+
+  /**
    * Update the status of a join request (Organizers)
    */
   updateRequestStatus: async (requestId: string, status: IUpdateJoinRequestStatus): Promise<IJoinRequestResponse> => {

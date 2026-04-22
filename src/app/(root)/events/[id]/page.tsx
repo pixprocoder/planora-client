@@ -107,7 +107,7 @@ export default function EventDetailsPage() {
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0) {
-      toast.error("Please select a merit rating node (1-5 stars)");
+      toast.error("Please select a rating (1-5 stars)");
       return;
     }
     reviewMutation.mutate();
@@ -126,7 +126,7 @@ export default function EventDetailsPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="text-muted-foreground animate-pulse font-medium italic">Synchronizing Event Reality...</p>
+        <p className="text-muted-foreground animate-pulse font-medium italic">Loading event details...</p>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export default function EventDetailsPage() {
         </div>
         <Link href="/events" className="text-primary font-black uppercase tracking-widest hover:underline flex items-center gap-2">
           <ChevronLeft className="w-5 h-5" />
-          Discovery Feed
+          All Events
         </Link>
       </div>
     );
@@ -285,7 +285,7 @@ export default function EventDetailsPage() {
               <div className="h-px bg-border/50" />
 
               <div className="space-y-6">
-                <h2 className="text-3xl font-black tracking-tight uppercase italic underline decoration-primary decoration-4 underline-offset-4">Experience Intel</h2>
+                <h2 className="text-3xl font-black tracking-tight uppercase italic underline decoration-primary decoration-4 underline-offset-4">About this Event</h2>
                 <div className="prose prose-invert max-w-none text-muted-foreground leading-relaxed text-lg font-medium">
                   <p>{event.description}</p>
                 </div>
@@ -303,19 +303,19 @@ export default function EventDetailsPage() {
               </div>
             </div>
 
-            {/* Review Matrix Section */}
+            {/* Event Reviews Section */}
             <div className="p-8 md:p-14 rounded-[3.5rem] bg-card/40 backdrop-blur-xl border border-border/50 shadow-2xl space-y-12">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
                     <Star className="w-8 h-8 text-amber-400" />
-                    Discovery Merit
+                    Event Reviews
                   </h2>
-                  <p className="text-muted-foreground font-medium italic">High-fidelity feedback from verified participants.</p>
+                  <p className="text-muted-foreground font-medium italic">Real feedback from verified attendees.</p>
                 </div>
                 <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-secondary/50 border border-border font-black uppercase text-xs">
                   <span className="text-primary text-lg">{reviews.length}</span>
-                  Nodes
+                  Reviews
                 </div>
               </div>
 
@@ -331,14 +331,14 @@ export default function EventDetailsPage() {
                       <MessageSquare className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-black italic uppercase tracking-tight">Sync Your Experience</h4>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">Share your feedback with the platform.</p>
+                      <h4 className="font-black italic uppercase tracking-tight">Share Your Thoughts</h4>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest italic">Let others know about your experience.</p>
                     </div>
                   </div>
 
                   <form onSubmit={handleReviewSubmit} className="space-y-6">
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Merit Rating</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Rating</label>
                       <div className="flex items-center gap-3">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
@@ -361,11 +361,11 @@ export default function EventDetailsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Participant Intel</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Review</label>
                       <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        placeholder="Tell us about your discovery..."
+                        placeholder="What did you think of the event?"
                         className="w-full bg-background border border-border/50 rounded-2xl p-5 focus:ring-2 focus:ring-primary outline-none h-32 resize-none italic font-medium"
                       />
                     </div>
@@ -376,7 +376,7 @@ export default function EventDetailsPage() {
                       className="flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                     >
                       {reviewMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      Deploy Feedback
+                      Submit Review
                     </button>
                   </form>
                 </motion.div>
@@ -387,7 +387,7 @@ export default function EventDetailsPage() {
                 {isLoadingReviews ? (
                   <div className="py-20 flex flex-col items-center justify-center gap-4">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse italic">Scanning Merit Matrix...</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse italic">Loading reviews...</p>
                   </div>
                 ) : reviews.length > 0 ? (
                   reviews.map((review, i) => (
@@ -400,9 +400,9 @@ export default function EventDetailsPage() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-secondary border border-border/50 flex items-center justify-center overflow-hidden">
+                          <div className="w-12 h-12 rounded-xl bg-secondary border border-border/50 flex items-center justify-center overflow-hidden relative">
                             {review.user?.image ? (
-                              <img src={review.user.image} alt={review.user.name} className="w-full h-full object-cover" />
+                              <Image src={review.user.image} alt={review.user.name} fill className="object-cover" unoptimized />
                             ) : (
                               <UserCircle2 className="w-8 h-8 text-muted-foreground/30" />
                             )}
@@ -432,7 +432,7 @@ export default function EventDetailsPage() {
                 ) : (
                   <div className="py-20 flex flex-col items-center justify-center text-center opacity-50 space-y-4">
                     <MessageSquare className="w-12 h-12 text-muted-foreground" />
-                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground italic">No merit nodes located yet.</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground italic">No reviews yet.</p>
                   </div>
                 )}
               </div>

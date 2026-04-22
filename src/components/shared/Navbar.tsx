@@ -20,7 +20,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { data: session, isPending } = useSession();
+  const { data: session } = useSession();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -87,94 +87,106 @@ export function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-3 relative z-50">
-            {isPending ? (
-              <div className="w-24 h-8 bg-secondary animate-pulse rounded-lg" />
-            ) : session ? (
-              <div className="flex items-center gap-2 md:gap-4 relative">
-                <Link
-                  href="/dashboard"
-                  className="hidden xs:flex items-center gap-2 text-sm font-bold bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+            <AnimatePresence mode="wait">
+              {session ? (
+                <motion.div
+                  key="user-actions"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex items-center gap-2 md:gap-4 relative"
                 >
-                  <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
-                </Link>
-
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      setIsProfileOpen(!isProfileOpen);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 overflow-hidden flex items-center justify-center relative hover:ring-2 hover:ring-primary transition-all shadow-inner group"
+                  <Link
+                    href="/dashboard"
+                    className="hidden xs:flex items-center gap-2 text-sm font-bold bg-primary/10 text-primary px-4 py-2 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
                   >
-                    {session.user.image ? (
-                      <NextImage
-                        src={session.user.image}
-                        alt={session.user.name ?? "User avatar"}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform"
-                        unoptimized
-                      />
-                    ) : (
-                      <User className="w-5 h-5 text-primary" />
-                    )}
-                  </button>
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
 
-                  <AnimatePresence>
-                    {isProfileOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full right-0 mt-3 w-56 bg-card/90 backdrop-blur-xl border border-border p-2 rounded-2xl shadow-2xl z-50"
-                      >
-                        <div className="p-3 border-b border-border/50 mb-2">
-                          <p className="text-sm font-bold truncate">{session.user.name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{session.user.email}</p>
-                        </div>
-                        <Link
-                          href="/dashboard"
-                          className="flex items-center gap-2 w-full p-3 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(!isProfileOpen);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 overflow-hidden flex items-center justify-center relative hover:ring-2 hover:ring-primary transition-all shadow-inner group"
+                    >
+                      {session.user.image ? (
+                        <NextImage
+                          src={session.user.image}
+                          alt={session.user.name ?? "User avatar"}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform"
+                          unoptimized
+                        />
+                      ) : (
+                        <User className="w-5 h-5 text-primary" />
+                      )}
+                    </button>
+
+                    <AnimatePresence>
+                      {isProfileOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute top-full right-0 mt-3 w-56 bg-card/90 backdrop-blur-xl border border-border p-2 rounded-2xl shadow-2xl z-50"
                         >
-                          <LayoutDashboard className="w-4 h-4" />
-                          Dashboard
-                        </Link>
-                        <Link
-                          href="/dashboard/profile"
-                          className="flex items-center gap-2 w-full p-3 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
-                        >
-                          <User className="w-4 h-4" />
-                          My Profile
-                        </Link>
-                        <div className="h-px bg-border/50 my-2" />
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-2 w-full p-3 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Sign Out
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
+                          <div className="p-3 border-b border-border/50 mb-2">
+                            <p className="text-sm font-bold truncate">{session.user.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{session.user.email}</p>
+                          </div>
+                          <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2 w-full p-3 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Dashboard
+                          </Link>
+                          <Link
+                            href="/dashboard/profile"
+                            className="flex items-center gap-2 w-full p-3 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                          >
+                            <User className="w-4 h-4" />
+                            My Profile
+                          </Link>
+                          <div className="h-px bg-border/50 my-2" />
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 w-full p-3 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="guest-actions"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  className="flex items-center gap-3"
                 >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg hover:shadow-primary/20 hover:scale-105 active:scale-95 sm:px-6"
-                >
-                  Join Now
-                </Link>
-              </>
-            )}
+                  <Link
+                    href="/login"
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:shadow-lg hover:shadow-primary/20 hover:scale-105 active:scale-95 sm:px-6"
+                  >
+                    Join Now
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <button
               onClick={() => {
